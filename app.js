@@ -1,5 +1,5 @@
 /* =============================================
-   THE LAND LORD – APP.JS
+   THE LAND LORD | APP.JS
    Premium Real Estate | Hubballi
    ============================================= */
 
@@ -12,6 +12,109 @@ const CONFIG = {
   phone: '918792154088',
 };
 
+// Touch / small-screen detection used across the file
+const IS_TOUCH  = window.matchMedia('(pointer: coarse)').matches;
+const IS_MOBILE = IS_TOUCH || window.innerWidth < 900;
+const REDUCED   = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// =============================================
+// WHATSAPP MESSAGE TEMPLATES
+// Kept in one place so every button opens a
+// properly worded enquiry instead of a blank chat.
+// =============================================
+const WA_MESSAGES = {
+  general:
+`Hello Samarth,
+
+I came across The Land Lord Real Estate Group and would like to speak with you about a property requirement in Hubballi.
+
+Name:
+Requirement:
+Preferred location:
+
+Could you please let me know a convenient time to connect?
+
+Thank you.`,
+
+  services:
+`Hello Samarth,
+
+I would like to enquire about the services offered by The Land Lord Real Estate Group.
+
+Name:
+Service required:
+Property location:
+
+Please share the details along with the documents needed and your charges for this service.
+
+Thank you.`,
+
+  documents:
+`Hello Samarth,
+
+I would like to book a consultation regarding property documentation.
+
+Name:
+Document required:
+Property location:
+
+Please let me know which records I need to arrange and a suitable time to discuss this.
+
+Thank you.`,
+
+  ec:
+`Hello Samarth,
+
+I need assistance with an Encumbrance Certificate for a property.
+
+Name:
+Survey number or property address:
+Period required:
+
+Please advise on the documents needed, the expected timeline and your charges for this service.
+
+Thank you.`,
+
+  rtc:
+`Hello Samarth,
+
+I need assistance with RTC records, also known as Record of Rights, Tenancy and Crops, for a piece of land.
+
+Name:
+Survey number:
+Village and hobli:
+
+Please let me know what details you need from me and how we should proceed.
+
+Thank you.`,
+
+  saledeed:
+`Hello Samarth,
+
+I am looking for assistance with Sale Deed documentation for a property transaction.
+
+Name:
+Property location:
+Stage of the transaction:
+
+Please guide me on the process, the documents required and the registration formalities.
+
+Thank you.`,
+};
+
+function waLink(key) {
+  const msg = WA_MESSAGES[key] || WA_MESSAGES.general;
+  return `https://wa.me/${CONFIG.phone}?text=${encodeURIComponent(msg)}`;
+}
+
+// Attach the right prewritten message to every WhatsApp button.
+// The plain wa.me href stays in the HTML as a fallback.
+function initWhatsAppLinks() {
+  document.querySelectorAll('a[data-wa]').forEach(el => {
+    el.href = waLink(el.dataset.wa);
+  });
+}
+
 // =============================================
 // DOM READY
 // =============================================
@@ -21,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initWebGLBackground();
   initHeader();
   initNavigation();
+  initWhatsAppLinks();
   initReveal();
   initStatCounters();
   initHeroCard3D();
@@ -56,7 +160,7 @@ function initCursor() {
   if (!dot || !ring) return;
 
   // Skip on touch devices
-  if (window.matchMedia('(pointer: coarse)').matches) return;
+  if (IS_TOUCH) return;
 
   let mouseX = 0, mouseY = 0;
   let ringX = 0, ringY = 0;
@@ -104,8 +208,8 @@ const CAM = { targetX: 0, targetY: 0, currentX: 0, currentY: 0 };
 function buildScene(canvas) {
   const THREE = window.THREE;
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_MOBILE, alpha: true, powerPreference: 'low-power' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_MOBILE ? 1.5 : 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x000000, 0);
 
@@ -141,7 +245,8 @@ function buildScene(canvas) {
   const mats = [matSolid, matWire, matGem];
 
   const objects = [];
-  for (let i = 0; i < 38; i++) {
+  const OBJECT_COUNT = IS_MOBILE ? 16 : 38;
+  for (let i = 0; i < OBJECT_COUNT; i++) {
     const mesh = new THREE.Mesh(
       geos[Math.floor(Math.random() * geos.length)],
       mats[Math.floor(Math.random() * mats.length)]
@@ -180,22 +285,50 @@ function buildScene(canvas) {
   ring2.rotation.z = Math.PI / 5;
   scene.add(ring2);
 
-  // Desktop mouse parallax
-  document.addEventListener('mousemove', (e) => {
-    CAM.targetX = (e.clientX / window.innerWidth - 0.5) * 5;
-    CAM.targetY = -(e.clientY / window.innerHeight - 0.5) * 4;
-  });
+  // Desktop mouse parallax (touch devices use the gyroscope instead)
+  if (!IS_TOUCH) {
+    document.addEventListener('mousemove', (e) => {
+      CAM.targetX = (e.clientX / window.innerWidth - 0.5) * 5;
+      CAM.targetY = -(e.clientY / window.innerHeight - 0.5) * 4;
+    });
+  }
 
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+  // On mobile the browser fires resize every time the address bar hides,
+  // so only rebuild the viewport when the width actually changes.
+  let lastW = window.innerWidth;
+  let lastH = window.innerHeight;
+  function onResize() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    if (IS_TOUCH && w === lastW && Math.abs(h - lastH) < 120) return;
+    lastW = w; lastH = h;
+    camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(w, h);
+  }
+  window.addEventListener('resize', onResize, { passive: true });
+  window.addEventListener('orientationchange', () => setTimeout(onResize, 250));
+
+  // Stop drawing while the tab is in the background to save battery
+  let paused = document.hidden;
+  let rafId  = null;
+  document.addEventListener('visibilitychange', () => {
+    paused = document.hidden;
+    if (paused) {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = null;
+    } else if (rafId === null) {
+      rafId = requestAnimationFrame(animate);
+    }
   });
 
   const clock = new THREE.Clock();
+  let t = 0;
   function animate() {
-    requestAnimationFrame(animate);
-    const t = clock.getElapsedTime();
+    if (paused) { rafId = null; return; }
+    rafId = requestAnimationFrame(animate);
+    // Clamp the step so returning from a background tab does not jump the scene
+    t += Math.min(clock.getDelta(), 0.05);
 
     // Smooth camera parallax (fed by mouse or gyroscope via CAM object)
     CAM.currentX += (CAM.targetX - CAM.currentX) * 0.04;
@@ -216,72 +349,102 @@ function buildScene(canvas) {
 
     renderer.render(scene, camera);
   }
-  animate();
+  rafId = requestAnimationFrame(animate);
 }
 
 // =============================================
 // GYROSCOPE / DEVICE ORIENTATION (mobile tilt)
 // =============================================
 function initGyroscope() {
-  // Only run on touch devices
-  if (!window.matchMedia('(pointer: coarse)').matches) return;
+  // Only run on touch devices; desktop keeps the cursor parallax
+  if (!IS_TOUCH || REDUCED) return;
 
-  const MAX = 6; // max camera shift in units
+  const MAX   = 6;  // max camera shift, in scene units
+  const RANGE = 28; // degrees of tilt that map to the full shift
+  const card  = document.getElementById('card-3d');
+  const hint  = document.getElementById('tilt-hint');
+
+  // The phone is never held perfectly flat, so the first reading becomes
+  // the neutral position and everything is measured relative to it.
+  let baseBeta = null, baseGamma = null;
+  let gotReading = false;
+
+  const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 
   function handleOrientation(e) {
-    // beta  = front-back tilt (-180 to 180), gamma = left-right tilt (-90 to 90)
-    const beta  = Math.min(Math.max(e.beta,  -45), 45);  // clamp
-    const gamma = Math.min(Math.max(e.gamma, -45), 45);  // clamp
+    if (e.beta === null || e.gamma === null) return;
 
-    // Map tilt to camera target (smooth via CAM lerp in animate loop)
-    CAM.targetX = (gamma / 45) * MAX;
-    CAM.targetY = -(beta  / 45) * MAX * 0.6;
+    if (baseBeta === null) {
+      baseBeta  = e.beta;
+      baseGamma = e.gamma;
+    }
+
+    let dBeta  = e.beta  - baseBeta;   // front to back tilt
+    let dGamma = e.gamma - baseGamma;  // left to right tilt
+
+    // In landscape the axes swap round, so follow the screen instead of the device
+    const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+    if (angle === 90)  { const t = dBeta; dBeta = -dGamma; dGamma = t; }
+    if (angle === -90 || angle === 270) { const t = dBeta; dBeta = dGamma; dGamma = -t; }
+
+    const nx = clamp(dGamma, -RANGE, RANGE) / RANGE;
+    const ny = clamp(dBeta,  -RANGE, RANGE) / RANGE;
+
+    // Feeds the same CAM object the mouse uses, so the background
+    // parallax is smoothed by the render loop either way.
+    CAM.targetX = nx * MAX;
+    CAM.targetY = -ny * MAX * 0.6;
+
+    // Tilt the hero card with the phone, mirroring the desktop hover tilt
+    if (card) {
+      card.style.transform =
+        `perspective(1200px) rotateX(${(-ny * 10).toFixed(2)}deg) rotateY(${(nx * 14).toFixed(2)}deg)`;
+    }
+
+    // Hide the hint once the phone has actually been moved
+    if (!gotReading && (Math.abs(dBeta) > 4 || Math.abs(dGamma) > 4)) {
+      gotReading = true;
+      if (hint) hint.classList.add('used');
+    }
   }
 
-  // iOS 13+ requires permission
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    // Show a button to request permission on first tap
+  function listen() {
+    window.addEventListener('deviceorientation', handleOrientation, { passive: true });
+    if (hint) hint.classList.add('active');
+    // Re-centre the neutral position after a rotation
+    window.addEventListener('orientationchange', () => {
+      baseBeta = null; baseGamma = null;
+    });
+  }
+
+  const needsPermission =
+    typeof DeviceOrientationEvent !== 'undefined' &&
+    typeof DeviceOrientationEvent.requestPermission === 'function';
+
+  if (needsPermission) {
+    // iOS 13 and later only grant motion access from a user gesture
+    if (sessionStorage.getItem('tll-motion') === 'denied') return;
+
     const permBtn = document.createElement('button');
-    permBtn.textContent = 'Enable Motion';
-    permBtn.style.cssText = `
-      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-      z-index: 1000; background: rgba(197,160,89,0.9); color: #000; border: none;
-      font-family: Inter, sans-serif; font-size: 0.75rem; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 22px;
-      border-radius: 100px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    `;
+    permBtn.className = 'motion-btn';
+    permBtn.type = 'button';
+    permBtn.innerHTML = '<span class="motion-dot"></span> Enable Motion';
     document.body.appendChild(permBtn);
+
     permBtn.addEventListener('click', () => {
       DeviceOrientationEvent.requestPermission().then(state => {
-        if (state === 'granted') {
-          window.addEventListener('deviceorientation', handleOrientation);
-        }
+        if (state === 'granted') listen();
+        else sessionStorage.setItem('tll-motion', 'denied');
         permBtn.remove();
-      }).catch(() => permBtn.remove());
+      }).catch(() => {
+        sessionStorage.setItem('tll-motion', 'denied');
+        permBtn.remove();
+      });
     });
   } else if (window.DeviceOrientationEvent) {
-    // Android and older iOS — no permission needed
-    window.addEventListener('deviceorientation', handleOrientation);
+    // Android and older iOS need no permission
+    listen();
   }
-
-  // Also listen to device motion for card tilt on mobile
-  initMobileCardTilt();
-}
-
-// =============================================
-// MOBILE CARD TILT (on device motion)
-// =============================================
-function initMobileCardTilt() {
-  const wrapper = document.getElementById('card-3d');
-  if (!wrapper) return;
-
-  window.addEventListener('deviceorientation', (e) => {
-    const gamma = Math.min(Math.max(e.gamma, -30), 30);
-    const beta  = Math.min(Math.max(e.beta - 45, -30), 30);
-    const ry = (gamma / 30) * 15;
-    const rx = -(beta  / 30) * 10;
-    wrapper.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg)`;
-  });
 }
 
 // =============================================
@@ -401,15 +564,15 @@ function initStatCounters() {
 }
 
 // =============================================
-// HERO 3D CARD – Desktop mouse tilt
+// HERO 3D CARD | Desktop mouse tilt
 // =============================================
 function initHeroCard3D() {
   const wrapper   = document.getElementById('card-3d');
   const container = document.querySelector('.hero-3d-card');
   if (!wrapper || !container) return;
 
-  // Desktop only – mobile uses gyroscope
-  if (window.matchMedia('(pointer: coarse)').matches) return;
+  // Desktop only, mobile uses the gyroscope
+  if (IS_TOUCH || REDUCED) return;
 
   let targetRx = 0, targetRy = 0;
   let currentRx = 0, currentRy = 0;
@@ -451,7 +614,7 @@ function initHeroCard3D() {
 // =============================================
 function initParticles() {
   const container = document.getElementById('hero-particles');
-  if (!container) return;
+  if (!container || REDUCED) return;
 
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -465,7 +628,9 @@ function initParticles() {
   resize();
   window.addEventListener('resize', resize, { passive: true });
 
-  const COUNT = 55;
+  // The link lines are the expensive part, so mobile gets fewer points
+  const COUNT     = IS_MOBILE ? 26 : 55;
+  const LINK_DIST = IS_MOBILE ? 70 : 90;
   const particles = Array.from({ length: COUNT }, () => ({
     x: Math.random() * (W || 800),
     y: Math.random() * (H || 600),
@@ -494,11 +659,11 @@ function initParticles() {
         const dx = particles[i].x - particles[j].x;
         const dy = particles[i].y - particles[j].y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 90) {
+        if (dist < LINK_DIST) {
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(197,160,89,${(1 - dist / 90) * 0.07})`;
+          ctx.strokeStyle = `rgba(197,160,89,${(1 - dist / LINK_DIST) * 0.07})`;
           ctx.lineWidth = 0.5;
           ctx.stroke();
         }
@@ -510,7 +675,7 @@ function initParticles() {
 }
 
 // =============================================
-// CONTACT FORM — builds professional WhatsApp msg
+// CONTACT FORM, builds the WhatsApp enquiry message
 // =============================================
 function initContactForm() {
   const form    = document.getElementById('contact-form');
@@ -529,20 +694,23 @@ function initContactForm() {
     if (!name) { highlightError('#f-name'); return; }
     if (!phone) { highlightError('#f-phone'); return; }
 
-    // Professional WhatsApp message
-    let msg = `Hello Samarth,\n\nI am writing to enquire about your property services. Below are my details:\n\nName: ${name}\nPhone: ${phone}`;
+    let msg = `Hello Samarth,\n\nI would like to enquire about your property services. My details are below.\n\nName: ${name}\nPhone: ${phone}`;
     if (email)    msg += `\nEmail: ${email}`;
-    msg += `\nService Required: ${interest}`;
-    if (location) msg += `\nPreferred Location: ${location}`;
-    if (message)  msg += `\n\nAdditional Details:\n${message}`;
-    msg += `\n\nI would appreciate if you could get back to me at your earliest convenience.\n\nThank you.`;
+    msg += `\nService required: ${interest}`;
+    if (location) msg += `\nPreferred location: ${location}`;
+    if (message)  msg += `\n\nAdditional details:\n${message}`;
+    msg += `\n\nPlease let me know the next steps and a convenient time to discuss this.\n\nThank you.`;
 
     const waUrl = `https://wa.me/${CONFIG.phone}?text=${encodeURIComponent(msg)}`;
 
     form.classList.add('hidden');
     success.classList.remove('hidden');
 
-    setTimeout(() => window.open(waUrl, '_blank'), 1200);
+    // Mobile browsers block window.open outside a gesture, so navigate instead
+    setTimeout(() => {
+      if (IS_TOUCH) window.location.href = waUrl;
+      else window.open(waUrl, '_blank', 'noopener');
+    }, 1200);
 
     setTimeout(() => {
       form.reset();
