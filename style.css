@@ -1,5 +1,5 @@
 /* =============================================
-   THE LAND LORD – STYLE.CSS
+   THE LAND LORD | STYLE.CSS
    Premium Real Estate | Hubballi
    ============================================= */
 
@@ -35,7 +35,7 @@ svg { display: block; }
 ::selection { background: var(--gold); color: #000; }
 
 /* =============================================
-   LOGO IMAGES — white bg removal via mix-blend-mode
+   LOGO IMAGES, white bg removal via mix-blend-mode
    ============================================= */
 .header-logo-img,
 .footer-logo-img,
@@ -59,11 +59,11 @@ svg { display: block; }
 .logo-wrap { cursor: pointer; flex-shrink: 0; }
 
 .hero-logo-img {
-  height: 120px;
+  height: 190px;
   width: auto;
-  max-width: 320px;
+  max-width: 100%;
   margin-bottom: 20px;
-  filter: drop-shadow(0 0 20px rgba(197,160,89,0.25));
+  filter: drop-shadow(0 0 26px rgba(197,160,89,0.28));
 }
 
 .card-logo-img {
@@ -340,17 +340,18 @@ svg { display: block; }
   50% { opacity: 0.5; transform: scale(0.8); }
 }
 
+/* Tagline sits under the logo, so it stays deliberately small */
 .hero-title {
   font-family: var(--serif);
-  font-size: clamp(2.4rem, 6vw, 4.5rem);
-  font-weight: 400; line-height: 1.08; letter-spacing: -0.02em;
-  color: var(--text); margin-bottom: 18px;
+  font-size: clamp(1.7rem, 3.2vw, 2.5rem);
+  font-weight: 400; line-height: 1.14; letter-spacing: -0.01em;
+  color: var(--text); margin-bottom: 14px;
 }
 
 .hero-sub {
-  font-family: var(--sans); font-size: 0.92rem;
-  color: var(--muted); line-height: 1.7; margin-bottom: 32px;
-  max-width: 480px; padding: 14px 18px;
+  font-family: var(--sans); font-size: 0.8rem;
+  color: var(--muted); line-height: 1.65; margin-bottom: 28px;
+  max-width: 430px; padding: 12px 16px;
   background: rgba(0,0,0,0.3); border: 1px solid var(--border);
   border-radius: 8px; backdrop-filter: blur(10px);
 }
@@ -401,6 +402,34 @@ svg { display: block; }
   font-family: var(--sans); font-size: 0.78rem; color: var(--gold);
   padding-top: 16px; border-top: 1px solid var(--border); letter-spacing: 0.06em;
 }
+
+/* Tilt hint, shown only once motion tracking is live on a phone */
+.tilt-hint {
+  display: none; align-items: center; justify-content: center; gap: 7px;
+  margin-top: 14px; font-family: var(--sans); font-size: 0.68rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold);
+  opacity: 0.75; transition: opacity 0.6s ease;
+}
+.tilt-hint.active { display: flex; animation: tiltNudge 2.6s ease-in-out infinite; }
+.tilt-hint.used { opacity: 0; animation: none; }
+.tilt-hint svg { flex-shrink: 0; }
+@keyframes tiltNudge {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+
+/* Motion permission button (iOS) */
+.motion-btn {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  z-index: 620; display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, var(--gold-lt), var(--gold));
+  color: #000; font-family: var(--sans); font-size: 0.72rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 11px 22px; border-radius: 100px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+}
+.motion-dot { width: 6px; height: 6px; border-radius: 50%; background: #000; opacity: 0.55; animation: pulse 2s infinite; }
 
 /* Scroll indicator */
 .scroll-indicator {
@@ -605,6 +634,18 @@ svg { display: block; }
 .doc-icon { color: var(--gold); font-style: normal; }
 .docs-cta-box { background: linear-gradient(135deg, rgba(197,160,89,0.09), transparent); border-left: 3px solid var(--gold); border-radius: 0 12px 12px 0; padding: 26px; }
 .docs-cta-box p { font-family: var(--serif); font-size: 1.15rem; color: var(--text); margin-bottom: 4px; }
+.docs-cta-note { display: block; font-family: var(--sans); font-size: 0.82rem; color: var(--muted); line-height: 1.65; margin-bottom: 18px; }
+.docs-cta-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.explainer-points { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.explainer-points li {
+  position: relative; padding-left: 18px;
+  font-family: var(--sans); font-size: 0.8rem; color: var(--muted); line-height: 1.6;
+}
+.explainer-points li::before {
+  content: ''; position: absolute; left: 0; top: 0.55em;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--gold); opacity: 0.7;
+}
 
 .explainer-card {
   background: var(--surface2); border: 1px solid var(--border);
@@ -707,8 +748,11 @@ select { cursor: pointer; -webkit-appearance: none; }
    RESPONSIVE
    ============================================= */
 @media (max-width: 1024px) {
+  /* Stack the hero and keep the 3D card visible, it is what responds to tilt */
   .hero-section { grid-template-columns: 1fr; justify-items: start; }
-  .hero-3d-card { display: none; }
+  .hero-content { max-width: 100%; }
+  .hero-3d-card { width: 100%; max-width: 380px; margin: 0 auto; }
+  .card-3d-wrapper { width: 100%; }
   .scroll-indicator { display: none; }
   .about-grid { grid-template-columns: 1fr; gap: 40px; }
   .about-right { order: -1; }
@@ -717,7 +761,7 @@ select { cursor: pointer; -webkit-appearance: none; }
   .footer-inner { grid-template-columns: 1fr 1fr; gap: 40px; }
   .docs-grid { grid-template-columns: 1fr; }
   .contact-grid { grid-template-columns: 1fr; }
-  .hero-logo-img { height: 100px; }
+  .hero-logo-img { height: 165px; }
 }
 
 @media (max-width: 768px) {
@@ -726,18 +770,25 @@ select { cursor: pointer; -webkit-appearance: none; }
   .hamburger { display: flex; }
   .mobile-sticky { display: flex; }
 
-  .hero-section { padding: 96px 20px 60px; gap: 32px; }
-  .hero-logo-img { height: 80px; }
-  .hero-title { font-size: clamp(2.2rem, 9vw, 3.2rem); }
-  .hero-sub { font-size: 0.87rem; padding: 12px 16px; }
-  .hero-actions { flex-direction: column; gap: 12px; }
+  /* Room for the sticky action bar and the home indicator */
+  body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+  .hero-section { min-height: auto; padding: 104px 20px 56px; gap: 28px; }
+  .hero-logo-img { height: 130px; margin-bottom: 14px; }
+  .hero-title { font-size: clamp(1.55rem, 6.4vw, 2.1rem); }
+  .hero-sub { font-size: 0.79rem; padding: 12px 14px; max-width: 100%; }
+  .hero-actions { flex-direction: column; gap: 12px; margin-bottom: 36px; }
   .hero-actions .btn-primary,
   .hero-actions .btn-outline { width: 100%; justify-content: center; }
-  .hero-stats { flex-wrap: wrap; gap: 0; row-gap: 16px; }
-  .stat { padding: 0 20px; }
-  .stat:first-child { padding-left: 0; }
+  .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+  .stat { padding: 0; }
+  .stat-num { font-size: 1.8rem; }
+  .stat-plus { font-size: 1.25rem; }
+  .stat-label { font-size: 0.62rem; letter-spacing: 0.06em; }
   .stat-divider { display: none; }
+  .card-face { padding: 26px 22px; }
 
+  .trust-strip { padding: 0 16px; }
   .trust-inner { grid-template-columns: repeat(2, 1fr); }
   .trust-item:nth-child(1), .trust-item:nth-child(2) { border-bottom: 1px solid var(--border); }
   .trust-item:nth-child(2) { border-right: none; }
@@ -747,20 +798,34 @@ select { cursor: pointer; -webkit-appearance: none; }
   .why-grid { grid-template-columns: 1fr; }
   .services-list-grid { grid-template-columns: 1fr; }
   .tech-services-grid { grid-template-columns: 1fr; }
-  .doc-list { grid-template-columns: 1fr; }
+  .doc-list { grid-template-columns: 1fr 1fr; }
+  .tech-card img { height: 180px; }
 
-  .cta-inner { padding: 40px 24px; }
+  .cta-inner { padding: 40px 22px; }
   .cta-actions { flex-direction: column; align-items: center; }
   .cta-actions .btn-primary,
   .cta-actions .btn-outline { width: 100%; justify-content: center; }
 
   .form-row { grid-template-columns: 1fr; gap: 0; }
   .form-row .form-group { margin-bottom: 20px; }
+  /* 16px keeps iOS from zooming in when a field is focused */
+  input, textarea, select { font-size: 1rem; padding: 14px 16px; }
 
-  .footer-inner { grid-template-columns: 1fr; }
-  .footer-bottom { flex-direction: column; gap: 10px; text-align: center; padding-bottom: 100px; }
+  .docs-cta-actions { flex-direction: column; }
+  .docs-cta-actions .btn-primary,
+  .docs-cta-actions .btn-outline { width: 100%; justify-content: center; }
+  .explainer-card { padding: 24px 20px; }
+  .explainer-card h4 { font-size: 1.35rem; }
+
+  .about-badge { bottom: -14px; left: 12px; padding: 14px 18px; }
+  .badge-num { font-size: 1.8rem; }
+
+  .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+  .footer-tagline { max-width: 100%; }
+  .footer-bottom { flex-direction: column; gap: 10px; text-align: center; padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
   .section-container { padding: 0 16px; }
+  .section-heading { font-size: clamp(1.9rem, 7vw, 2.4rem); }
   .about-section { padding: 80px 0; }
   .services-preview-section { padding: 80px 0; }
   .why-section { padding: 80px 0; }
@@ -768,18 +833,69 @@ select { cursor: pointer; -webkit-appearance: none; }
   .full-services-section { padding: 48px 0 80px; }
   .docs-section { padding: 48px 0 80px; }
   .contact-section { padding: 48px 0 80px; }
-  .inner-hero { padding: 120px 0 60px; }
+  .inner-hero { padding: 120px 0 56px; }
+  .page-title { font-size: clamp(2rem, 8.5vw, 2.8rem); }
+  .page-sub { font-size: 0.92rem; }
   .contact-form-wrap { padding: 28px 20px; }
   .hero-logo-wrap { margin-bottom: 16px; }
+  .contact-card { padding: 26px 22px; }
 
   /* Footer logo on mobile */
   .footer-logo-img { height: 48px; }
   .header-logo-img { height: 44px; }
+
+  /* Hover states do not apply on touch, so drop the transforms */
+  .service-card:hover, .sl-card:hover, .tech-card:hover,
+  .explainer-card:hover, .why-card:hover { transform: none; }
 }
 
 @media (max-width: 480px) {
-  .hero-logo-img { height: 68px; }
-  .hero-title { font-size: 2rem; }
-  .splash-logo { height: 120px; }
-  .page-title { font-size: 2.4rem; }
+  .hero-section { padding: 96px 16px 48px; }
+  .hero-logo-img { height: 112px; }
+  .hero-title { font-size: 1.5rem; }
+  .hero-badge { font-size: 0.66rem; padding: 6px 13px; margin-bottom: 16px; }
+  .splash-logo { height: 130px; }
+  .doc-list { grid-template-columns: 1fr; }
+  .services-group-title { font-size: 1.25rem; gap: 10px; }
+  .form-success h3 { font-size: 1.6rem; }
+  .ms-btn { font-size: 0.66rem; padding: 14px 6px; }
+}
+
+@media (max-width: 360px) {
+  .hero-logo-img { height: 96px; }
+  .hero-title { font-size: 1.35rem; }
+  .stat-num { font-size: 1.5rem; }
+  .stat-label { font-size: 0.56rem; }
+  .btn-primary, .btn-outline { padding: 13px 20px; font-size: 0.82rem; }
+}
+
+/* Short landscape screens: the full height menu needs to scroll */
+@media (max-height: 520px) and (orientation: landscape) {
+  .mobile-menu { justify-content: flex-start; padding: 80px 24px 40px; overflow-y: auto; }
+  .mobile-menu-logo { height: 54px; margin-bottom: 12px; }
+  .mobile-link { font-size: 1.5rem; }
+  .hero-section { min-height: auto; }
+}
+
+/* =============================================
+   TOUCH AND MOTION PREFERENCES
+   ============================================= */
+@media (pointer: coarse) {
+  /* Grey flash on tap looks broken against the dark theme */
+  a, button, .ms-btn, [data-tab] { -webkit-tap-highlight-color: rgba(197,160,89,0.18); }
+  /* Comfortable tap targets */
+  .nav-link, .mobile-link, .footer-links a, .footer-services a,
+  .explainer-link, .contact-link, .get-dir { padding-top: 4px; padding-bottom: 4px; }
+  .ms-btn { min-height: 52px; padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px)); }
+  .doc-list li { padding: 13px 14px; }
+  /* The card follows the gyroscope, so it must not fight a CSS transition */
+  .card-3d-wrapper { transition: transform 0.08s linear; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .scroll-indicator, .badge-dot, .tilt-hint { animation: none; }
+  .card-3d-wrapper { transform: none !important; }
+  #bg-canvas { opacity: 0.4; }
 }
