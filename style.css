@@ -130,6 +130,13 @@ svg { display: block; }
    3D CANVAS BACKGROUND
    ============================================= */
 #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.85; }
+.scroll-progress {
+  position: fixed; top: 0; left: 0; z-index: 1001;
+  width: 100%; height: 2px; transform: scaleX(0); transform-origin: left;
+  background: linear-gradient(90deg, var(--gold-dk), var(--gold-lt));
+  box-shadow: 0 0 12px rgba(232,208,145,0.65);
+  pointer-events: none;
+}
 
 /* =============================================
    SPLASH SCREEN
@@ -264,7 +271,8 @@ svg { display: block; }
   opacity: 0; transform: translateY(40px) scale(0.97);
   transition: opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1);
 }
-.reveal.visible { opacity: 1; transform: translateY(0) scale(1); }
+.reveal.visible { opacity: 1; transform: translateY(var(--scroll-offset, 0px)) scale(1); }
+.scroll-parallax { will-change: transform; }
 
 /* =============================================
    PAGE SYSTEM
@@ -502,7 +510,7 @@ svg { display: block; }
 .founder-role { font-family: var(--sans); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-top: 2px; }
 
 .about-img-wrapper { position: relative; }
-.about-img { border-radius: 16px; object-fit: cover; aspect-ratio: 4/5; border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+.about-img { border-radius: 16px; object-fit: contain; height: auto; max-height: 620px; background: var(--surface2); border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
 .about-img-overlay { position: absolute; inset: 0; border-radius: 16px; background: linear-gradient(to bottom, transparent 60%, rgba(5,5,8,0.6)); pointer-events: none; }
 .about-badge {
   position: absolute; bottom: -20px; left: -20px;
@@ -609,7 +617,7 @@ svg { display: block; }
 .tech-services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .tech-card { border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: var(--surface2); transition: transform 0.4s, box-shadow 0.4s, border-color 0.3s; }
 .tech-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(0,0,0,0.4); border-color: rgba(197,160,89,0.35); }
-.tech-card img { height: 220px; object-fit: cover; transition: transform 0.6s, filter 0.3s; filter: grayscale(30%) brightness(0.8); }
+.tech-card img { height: 220px; object-fit: contain; background: #090a0e; transition: transform 0.6s, filter 0.3s; filter: grayscale(30%) brightness(0.8); }
 .tech-card:hover img { transform: scale(1.06); filter: grayscale(0%) brightness(0.9); }
 .tech-card-body { padding: 26px; }
 .tech-card-body h4 { font-family: var(--serif); font-size: 1.2rem; color: var(--text); margin-bottom: 10px; transition: color 0.3s; }
@@ -731,6 +739,8 @@ select { cursor: pointer; -webkit-appearance: none; }
 .footer-contact p, .footer-contact a { font-family: var(--sans); font-size: 0.84rem; color: var(--muted); line-height: 1.65; display: block; margin-bottom: 10px; transition: color 0.2s; }
 .footer-contact a:hover { color: var(--gold); }
 .footer-bottom { max-width: 1280px; margin: 0 auto; padding: 20px 24px 100px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); font-family: var(--sans); font-size: 0.74rem; color: rgba(138,143,160,0.45); }
+.footer-bottom a { color: inherit; transition: color 0.2s; }
+.footer-bottom a:hover { color: var(--gold); }
 @media (min-width: 768px) { .footer-bottom { padding-bottom: 40px; } }
 
 /* =============================================
@@ -756,7 +766,7 @@ select { cursor: pointer; -webkit-appearance: none; }
   .scroll-indicator { display: none; }
   .about-grid { grid-template-columns: 1fr; gap: 40px; }
   .about-right { order: -1; }
-  .about-img { aspect-ratio: 16/9; }
+  .about-img { width: 100%; max-height: 460px; }
   .why-grid { grid-template-columns: repeat(2, 1fr); }
   .footer-inner { grid-template-columns: 1fr 1fr; gap: 40px; }
   .docs-grid { grid-template-columns: 1fr; }
@@ -773,7 +783,7 @@ select { cursor: pointer; -webkit-appearance: none; }
   /* Room for the sticky action bar and the home indicator */
   body { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
-  .hero-section { min-height: auto; padding: 104px 20px 56px; gap: 28px; }
+  .hero-section { min-height: auto; padding: 96px 20px 64px; gap: 36px; }
   .hero-logo-img { height: 130px; margin-bottom: 14px; }
   .hero-title { font-size: clamp(1.55rem, 6.4vw, 2.1rem); }
   .hero-sub { font-size: 0.79rem; padding: 12px 14px; max-width: 100%; }
@@ -786,7 +796,8 @@ select { cursor: pointer; -webkit-appearance: none; }
   .stat-plus { font-size: 1.25rem; }
   .stat-label { font-size: 0.62rem; letter-spacing: 0.06em; }
   .stat-divider { display: none; }
-  .card-face { padding: 26px 22px; }
+  .hero-3d-card { max-width: 340px; }
+  .card-face { padding: 24px 20px; }
 
   .trust-strip { padding: 0 16px; }
   .trust-inner { grid-template-columns: repeat(2, 1fr); }
@@ -799,7 +810,7 @@ select { cursor: pointer; -webkit-appearance: none; }
   .services-list-grid { grid-template-columns: 1fr; }
   .tech-services-grid { grid-template-columns: 1fr; }
   .doc-list { grid-template-columns: 1fr 1fr; }
-  .tech-card img { height: 180px; }
+  .tech-card img { height: auto; min-height: 180px; max-height: 240px; }
 
   .cta-inner { padding: 40px 22px; }
   .cta-actions { flex-direction: column; align-items: center; }
@@ -853,6 +864,7 @@ select { cursor: pointer; -webkit-appearance: none; }
   .hero-section { padding: 96px 16px 48px; }
   .hero-logo-img { height: 112px; }
   .hero-title { font-size: 1.5rem; }
+  .hero-3d-card { max-width: 100%; }
   .hero-badge { font-size: 0.66rem; padding: 6px 13px; margin-bottom: 16px; }
   .splash-logo { height: 130px; }
   .doc-list { grid-template-columns: 1fr; }
@@ -898,4 +910,5 @@ select { cursor: pointer; -webkit-appearance: none; }
   .scroll-indicator, .badge-dot, .tilt-hint { animation: none; }
   .card-3d-wrapper { transform: none !important; }
   #bg-canvas { opacity: 0.4; }
+  .scroll-progress { display: none; }
 }
