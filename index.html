@@ -26,6 +26,7 @@
 
   <!-- 3D Canvas Background -->
   <canvas id="bg-canvas"></canvas>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
 
   <!-- Cursor Follower (desktop only) -->
   <div class="cursor-dot" id="cursor-dot"></div>
@@ -75,7 +76,7 @@
 
         <div class="hero-content">
           <!-- Logo prominent in hero -->
-          <div class="hero-logo-wrap reveal">
+          <div class="hero-logo-wrap reveal scroll-parallax" data-parallax="0.12">
             <img src="logo.jpeg" alt="The Land Lord Real Estate Group" class="hero-logo-img" />
           </div>
 
@@ -121,7 +122,7 @@
         </div>
 
         <!-- 3D Floating Card (desktop) -->
-        <div class="hero-3d-card reveal" data-delay="200">
+        <div class="hero-3d-card reveal scroll-parallax" data-delay="200" data-parallax="0.08">
           <div class="card-3d-wrapper" id="card-3d">
             <div class="card-face">
               <div class="card-logo-block">
@@ -663,6 +664,7 @@
     <div class="footer-bottom">
       <span>© <span id="footer-year"></span> The Land Lord. All rights reserved.</span>
       <span>Hubballi, Karnataka</span>
+      <a href="https://neodraftsolutions.me/neo/" target="_blank" rel="noopener">Created by NEO DRAFT SOLUTIONS</a>
     </div>
   </footer>
 
