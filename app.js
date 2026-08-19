@@ -124,8 +124,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initWebGLBackground();
   initHeader();
   initNavigation();
+  initHistory();
   initWhatsAppLinks();
   initReveal();
+  initScrollEffects();
   initStatCounters();
   initHeroCard3D();
   initContactForm();
@@ -410,10 +412,13 @@ function initGyroscope() {
 
   function listen() {
     window.addEventListener('deviceorientation', handleOrientation, { passive: true });
+    window.addEventListener('deviceorientationabsolute', handleOrientation, { passive: true });
     if (hint) hint.classList.add('active');
     // Re-centre the neutral position after a rotation
     window.addEventListener('orientationchange', () => {
       baseBeta = null; baseGamma = null;
+      CAM.targetX = 0;
+      CAM.targetY = 0;
     });
   }
 
@@ -441,8 +446,8 @@ function initGyroscope() {
         permBtn.remove();
       });
     });
-  } else if (window.DeviceOrientationEvent) {
-    // Android and older iOS need no permission
+  } else if ('DeviceOrientationEvent' in window) {
+    // Android and older iOS generally grant access without a prompt.
     listen();
   }
 }
@@ -480,7 +485,21 @@ function initHeader() {
 // =============================================
 // NAVIGATION / PAGE SWITCHING
 // =============================================
-function navigate(tab) {
+const VALID_TABS = new Set(['home', 'services', 'docs', 'contact']);
+
+function navigate(tab, options = {}) {
+  if (!VALID_TABS.has(tab)) return;
+
+  const { addHistory = true, instant = false } = options;
+
+  if (addHistory && (!history.state || history.state.tab !== tab)) {
+    history.pushState(
+      { app: 'the-land-lord', tab },
+      '',
+      window.location.href
+    );
+  }
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById('page-' + tab);
   if (target) target.classList.add('active');
@@ -488,7 +507,7 @@ function navigate(tab) {
   document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.tab === tab));
   document.querySelectorAll('.mobile-link').forEach(l => l.classList.toggle('active', l.dataset.tab === tab));
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: instant ? 'auto' : 'smooth' });
 
   setTimeout(() => {
     triggerReveal();
@@ -502,6 +521,35 @@ function initNavigation() {
       e.preventDefault();
       if (el.dataset.tab) navigate(el.dataset.tab);
     });
+  });
+}
+
+// Each in-app section gets its own browser history entry. This makes the
+// Android/iOS back gesture return to the previous section instead of exiting.
+function initHistory() {
+  const currentTab = history.state &&
+    history.state.app === 'the-land-lord' &&
+    VALID_TABS.has(history.state.tab)
+    ? history.state.tab
+    : 'home';
+
+  history.replaceState(
+    { app: 'the-land-lord', tab: currentTab },
+    '',
+    window.location.href
+  );
+
+  if (currentTab !== 'home') {
+    navigate(currentTab, { addHistory: false, instant: true });
+  }
+
+  window.addEventListener('popstate', (event) => {
+    const tab = event.state &&
+      event.state.app === 'the-land-lord' &&
+      VALID_TABS.has(event.state.tab)
+      ? event.state.tab
+      : 'home';
+    navigate(tab, { addHistory: false, instant: true });
   });
 }
 
@@ -531,6 +579,40 @@ function triggerReveal() {
 
 function initReveal() {
   triggerReveal();
+}
+
+// Scroll-linked motion stays on the compositor and is disabled for reduced motion.
+function initScrollEffects() {
+  if (REDUCED) return;
+
+  const progress = document.getElementById('scroll-progress');
+  const parallaxItems = document.querySelectorAll('[data-parallax]');
+  let ticking = false;
+
+  function update() {
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    const ratio = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+    if (progress) progress.style.transform = `scaleX(${Math.min(Math.max(ratio, 0), 1)})`;
+
+    parallaxItems.forEach(el => {
+      const amount = Number(el.dataset.parallax) || 0;
+      const rect = el.getBoundingClientRect();
+      const offset = (window.innerHeight / 2 - (rect.top + rect.height / 2)) * amount;
+      el.style.setProperty('--scroll-offset', `${offset.toFixed(1)}px`);
+    });
+    ticking = false;
+  }
+
+  function requestUpdate() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+  }
+
+  window.addEventListener('scroll', requestUpdate, { passive: true });
+  window.addEventListener('resize', requestUpdate, { passive: true });
+  requestUpdate();
 }
 
 // =============================================
