@@ -236,44 +236,52 @@ function buildScene(canvas) {
   const matWire  = new THREE.MeshBasicMaterial({ color: 0xE8D091, wireframe: true, transparent: true, opacity: 0.12 });
   const matGem   = new THREE.MeshStandardMaterial({ color: 0xC5A059, metalness: 0.9, roughness: 0.05, transparent: true, opacity: 0.22, side: THREE.DoubleSide });
 
-  const geos = [
-    new THREE.OctahedronGeometry(1.6, 0),
-    new THREE.TorusGeometry(1.3, 0.06, 20, 100),
-    new THREE.DodecahedronGeometry(1.2, 0),
-    new THREE.IcosahedronGeometry(1.1, 0),
-    new THREE.TorusKnotGeometry(0.7, 0.2, 100, 16),
-    new THREE.SphereGeometry(0.9, 8, 8),
-  ];
-  const mats = [matSolid, matWire, matGem];
-
   const objects = [];
-  const OBJECT_COUNT = IS_MOBILE ? 16 : 38;
+  const OBJECT_COUNT = IS_MOBILE ? 10 : 22;
   for (let i = 0; i < OBJECT_COUNT; i++) {
-    const mesh = new THREE.Mesh(
-      geos[Math.floor(Math.random() * geos.length)],
-      mats[Math.floor(Math.random() * mats.length)]
+    const building = new THREE.Group();
+    const width = 0.8 + Math.random() * 1.2;
+    const height = 0.9 + Math.random() * 2.2;
+    const depth = 0.7 + Math.random() * 0.8;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), matSolid);
+    body.position.y = height / 2;
+    building.add(body);
+
+    const roof = new THREE.Mesh(
+      new THREE.ConeGeometry(width * 0.78, width * 0.7, 4),
+      Math.random() > 0.35 ? matGem : matWire
     );
+    roof.position.y = height + width * 0.35;
+    roof.rotation.y = Math.PI / 4;
+    building.add(roof);
+
+    if (Math.random() > 0.3) {
+      const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.7, 6), matWire);
+      antenna.position.y = height + width * 0.85;
+      building.add(antenna);
+    }
+
     const r = 18 + Math.random() * 10;
     const theta = Math.random() * Math.PI * 2;
     const phi   = Math.random() * Math.PI;
-    mesh.position.set(
+    building.position.set(
       r * Math.sin(phi) * Math.cos(theta),
       r * Math.sin(phi) * Math.sin(theta) * 0.6,
       r * Math.cos(phi) - 5
     );
-    mesh.rotation.set(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2);
+    building.rotation.y = Math.random() * Math.PI * 2;
     const s = 0.4 + Math.random() * 1.4;
-    mesh.scale.setScalar(s);
-    mesh.userData = {
+    building.scale.setScalar(s);
+    building.userData = {
       rx: (Math.random() - 0.5) * 0.006,
       ry: (Math.random() - 0.5) * 0.007,
       rz: (Math.random() - 0.5) * 0.004,
       floatSpeed: 0.008 + Math.random() * 0.012,
       floatOffset: Math.random() * Math.PI * 2,
-      baseY: mesh.position.y,
+      baseY: building.position.y,
     };
-    scene.add(mesh);
-    objects.push(mesh);
+    scene.add(building);
+    objects.push(building);
   }
 
   // Central decorative rings
@@ -364,7 +372,6 @@ function initGyroscope() {
   const MAX   = 6;  // max camera shift, in scene units
   const RANGE = 28; // degrees of tilt that map to the full shift
   const card  = document.getElementById('card-3d');
-  const hint  = document.getElementById('tilt-hint');
 
   // The phone is never held perfectly flat, so the first reading becomes
   // the neutral position and everything is measured relative to it.
@@ -403,17 +410,14 @@ function initGyroscope() {
         `perspective(1200px) rotateX(${(-ny * 10).toFixed(2)}deg) rotateY(${(nx * 14).toFixed(2)}deg)`;
     }
 
-    // Hide the hint once the phone has actually been moved
     if (!gotReading && (Math.abs(dBeta) > 4 || Math.abs(dGamma) > 4)) {
       gotReading = true;
-      if (hint) hint.classList.add('used');
     }
   }
 
   function listen() {
     window.addEventListener('deviceorientation', handleOrientation, { passive: true });
     window.addEventListener('deviceorientationabsolute', handleOrientation, { passive: true });
-    if (hint) hint.classList.add('active');
     // Re-centre the neutral position after a rotation
     window.addEventListener('orientationchange', () => {
       baseBeta = null; baseGamma = null;
@@ -428,8 +432,6 @@ function initGyroscope() {
 
   if (needsPermission) {
     // iOS 13 and later only grant motion access from a user gesture
-    if (sessionStorage.getItem('tll-motion') === 'denied') return;
-
     const permBtn = document.createElement('button');
     permBtn.className = 'motion-btn';
     permBtn.type = 'button';
@@ -447,7 +449,6 @@ function initGyroscope() {
       });
     });
   } else if ('DeviceOrientationEvent' in window) {
-    // Android and older iOS generally grant access without a prompt.
     listen();
   }
 }
@@ -468,6 +469,7 @@ function initHeader() {
   hamburger.addEventListener('click', () => {
     const open = hamburger.classList.toggle('open');
     mobileMenu.classList.toggle('open', open);
+    hamburger.setAttribute('aria-expanded', String(open));
     document.body.style.overflow = open ? 'hidden' : '';
   });
 
@@ -477,8 +479,21 @@ function initHeader() {
       navigate(link.dataset.tab);
       hamburger.classList.remove('open');
       mobileMenu.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
       document.body.style.overflow = '';
     });
+  });
+
+  mobileMenu.addEventListener('click', (e) => {
+    if (e.target === mobileMenu) {
+      hamburger.click();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && mobileMenu.classList.contains('open')) {
+      hamburger.click();
+    }
   });
 }
 
