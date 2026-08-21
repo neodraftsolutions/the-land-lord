@@ -411,21 +411,6 @@ svg { display: block; }
   padding-top: 16px; border-top: 1px solid var(--border); letter-spacing: 0.06em;
 }
 
-/* Tilt hint, shown only once motion tracking is live on a phone */
-.tilt-hint {
-  display: none; align-items: center; justify-content: center; gap: 7px;
-  margin-top: 14px; font-family: var(--sans); font-size: 0.68rem;
-  letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold);
-  opacity: 0.75; transition: opacity 0.6s ease;
-}
-.tilt-hint.active { display: flex; animation: tiltNudge 2.6s ease-in-out infinite; }
-.tilt-hint.used { opacity: 0; animation: none; }
-.tilt-hint svg { flex-shrink: 0; }
-@keyframes tiltNudge {
-  0%, 100% { transform: rotate(-3deg); }
-  50%      { transform: rotate(3deg); }
-}
-
 /* Motion permission button (iOS) */
 .motion-btn {
   position: fixed; left: 50%; transform: translateX(-50%);
@@ -753,6 +738,8 @@ select { cursor: pointer; -webkit-appearance: none; }
 .ms-btn.call { color: var(--text); }
 .ms-btn.whatsapp { color: var(--gold); }
 .ms-btn.enquire { color: var(--text); }
+.mobile-sticky .call, .mobile-sticky .whatsapp { display: none; }
+.mobile-sticky .enquire { flex: 1 1 100%; color: var(--gold); }
 
 /* =============================================
    RESPONSIVE
@@ -779,6 +766,11 @@ select { cursor: pointer; -webkit-appearance: none; }
   .desktop-nav { display: none; }
   .hamburger { display: flex; }
   .mobile-sticky { display: flex; }
+  .mobile-menu { padding: 96px 24px 40px; justify-content: flex-start; overflow-y: auto; }
+  .mobile-menu-logo { margin-bottom: 28px; }
+  .mobile-link { width: min(100%, 360px); padding: 14px 18px; border-bottom: 1px solid var(--border); font-family: var(--sans); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .mobile-link.active { background: rgba(197,160,89,0.1); border-radius: 8px; }
+  .contact-actions { display: none; }
 
   /* Room for the sticky action bar and the home indicator */
   body { padding-bottom: env(safe-area-inset-bottom, 0px); }
@@ -907,7 +899,7 @@ select { cursor: pointer; -webkit-appearance: none; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; transition: none; }
-  .scroll-indicator, .badge-dot, .tilt-hint { animation: none; }
+  .scroll-indicator, .badge-dot { animation: none; }
   .card-3d-wrapper { transform: none !important; }
   #bg-canvas { opacity: 0.4; }
   .scroll-progress { display: none; }
